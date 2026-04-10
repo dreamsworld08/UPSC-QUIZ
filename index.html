@@ -437,6 +437,22 @@
     font-size: 15px;
   }
 
+  .student-greeting {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+
+  .result-student-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
   .stats-row {
     display: flex;
     gap: 14px;
@@ -595,6 +611,12 @@
 
     .btn-restart { padding: 12px 36px; font-size: 14px; }
 
+    .name-form { padding: 16px 18px; margin-bottom: 20px; border-radius: 10px; }
+    .name-form h3 { font-size: 12px; margin-bottom: 12px; }
+    .name-fields { flex-direction: column; gap: 12px; }
+    .field-group input { padding: 11px 12px; font-size: 14px; }
+    .field-group label { font-size: 12px; }
+
     .review-section { margin-top: 28px; }
     .review-section h3 { font-size: 12px; margin-bottom: 14px; }
     .review-item { padding: 16px; border-radius: 10px; margin-bottom: 10px; }
@@ -614,6 +636,85 @@
     .question-text { font-size: 14px; }
     .stats-row { flex-direction: column; align-items: center; }
     .stat { width: 100%; }
+  }
+
+  /* Name form */
+  .name-form {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 28px;
+    margin-bottom: 28px;
+    width: 100%;
+    max-width: 480px;
+    text-align: left;
+  }
+
+  .name-form h3 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .name-fields {
+    display: flex;
+    gap: 14px;
+  }
+
+  .field-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  .field-group input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field-group input::placeholder {
+    color: var(--text-dim);
+    opacity: 0.5;
+  }
+
+  .field-group input:focus {
+    border-color: var(--accent);
+  }
+
+  .field-group input.input-error {
+    border-color: var(--wrong);
+  }
+
+  .name-error {
+    display: none;
+    color: var(--wrong);
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  .name-error.show {
+    display: block;
+    animation: fadeIn 0.3s;
   }
 
   /* Safe area for notched phones */
@@ -655,11 +756,27 @@
     </ul>
   </div>
 
+  <div class="name-form">
+    <h3>Enter Your Name</h3>
+    <div class="name-fields">
+      <div class="field-group">
+        <label for="first-name">First Name</label>
+        <input type="text" id="first-name" placeholder="e.g. Rahul" autocomplete="given-name" />
+      </div>
+      <div class="field-group">
+        <label for="surname">Surname</label>
+        <input type="text" id="surname" placeholder="e.g. Sharma" autocomplete="family-name" />
+      </div>
+    </div>
+    <div class="name-error" id="name-error">Please enter both first name and surname</div>
+  </div>
+
   <button class="btn-start" onclick="startQuiz()">Begin Quiz</button>
 </div>
 
 <!-- QUIZ SCREEN -->
 <div class="container" id="quiz-screen">
+  <div class="student-greeting" id="student-greeting"></div>
   <div class="top-bar">
     <div class="q-counter">Question <span id="q-num">1</span> / 15</div>
     <div class="score-badge">Score: <span id="live-score">0</span></div>
@@ -699,6 +816,7 @@
       </div>
     </div>
     <h2 id="result-title">Well Done!</h2>
+    <p class="result-student-name" id="result-student-name"></p>
     <p class="result-msg" id="result-msg"></p>
 
     <div class="stats-row">
@@ -747,6 +865,7 @@ let timer = null;
 let timeLeft = TIME_LIMIT;
 let answered = false;
 let results = [];
+let studentName = '';
 
 function shuffle(arr) {
   const a = [...arr];
@@ -758,6 +877,26 @@ function shuffle(arr) {
 }
 
 function startQuiz() {
+  const firstName = document.getElementById('first-name').value.trim();
+  const surname = document.getElementById('surname').value.trim();
+  const errorEl = document.getElementById('name-error');
+  const fnInput = document.getElementById('first-name');
+  const snInput = document.getElementById('surname');
+
+  // Reset error states
+  fnInput.classList.remove('input-error');
+  snInput.classList.remove('input-error');
+  errorEl.classList.remove('show');
+
+  if (!firstName || !surname) {
+    if (!firstName) fnInput.classList.add('input-error');
+    if (!surname) snInput.classList.add('input-error');
+    errorEl.classList.add('show');
+    return;
+  }
+
+  studentName = firstName + ' ' + surname;
+
   shuffled = shuffle(questions);
   current = 0;
   score = 0;
@@ -765,6 +904,7 @@ function startQuiz() {
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('result-screen').style.display = 'none';
   document.getElementById('quiz-screen').style.display = 'block';
+  document.getElementById('student-greeting').textContent = 'Good luck, ' + firstName + '!';
   showQuestion();
 }
 
@@ -916,7 +1056,11 @@ function showResults() {
   else { title = 'Don\'t Give Up!'; msg = 'Every expert was once a beginner. Review and try again.'; }
 
   document.getElementById('result-title').textContent = title;
+  document.getElementById('result-student-name').textContent = studentName;
   document.getElementById('result-msg').textContent = msg;
+
+  // Submit score to leaderboard silently
+  submitScore(studentName, score, correctCount, wrongCount, timeoutCount);
 
   // Animate ring
   setTimeout(() => {
@@ -939,10 +1083,47 @@ function showResults() {
   });
 }
 
+const BLOB_ID = '019d75db-a283-7d2a-8e1c-7bb9adcd06c1';
+const BLOB_URL = 'https://jsonblob.com/api/jsonBlob/' + BLOB_ID;
+
+async function submitScore(name, score, correct, wrong, timeout) {
+  try {
+    const res = await fetch(BLOB_URL);
+    const data = await res.json();
+    const lb = data.leaderboard || [];
+    lb.push({
+      name: name,
+      score: score,
+      correct: correct,
+      wrong: wrong,
+      timeout: timeout,
+      date: new Date().toISOString(),
+      percentage: Math.round((score / 15) * 100)
+    });
+    await fetch(BLOB_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leaderboard: lb })
+    });
+  } catch (e) {
+    // Silent fail — student doesn't need to know
+  }
+}
+
 function restartQuiz() {
   document.getElementById('result-screen').style.display = 'none';
-  startQuiz();
+  shuffled = shuffle(questions);
+  current = 0;
+  score = 0;
+  results = [];
+  document.getElementById('quiz-screen').style.display = 'block';
+  document.getElementById('student-greeting').textContent = 'Good luck, ' + studentName.split(' ')[0] + '!';
+  showQuestion();
 }
+
+// Enter key starts quiz from name fields
+document.getElementById('first-name').addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('surname').focus(); });
+document.getElementById('surname').addEventListener('keydown', function(e) { if (e.key === 'Enter') startQuiz(); });
 </script>
 </body>
 </html>
